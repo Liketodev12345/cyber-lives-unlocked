@@ -21,7 +21,7 @@ export type SimulationState = {
   showPopUp: boolean;
   popUpContent: {
     title?: string;
-    message: string;
+    message: string | React.ReactNode; // Update to allow ReactNode for JSX elements
     buttonText: string;
     onClose: () => void;
   } | null;

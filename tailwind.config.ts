@@ -19,6 +19,9 @@ export default {
 			}
 		},
 		extend: {
+			borderWidth: {
+				'5': '5px', // Add the custom border-5 width
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
