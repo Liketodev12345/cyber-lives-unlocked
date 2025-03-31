@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import PhoneScreen from './PhoneScreen';
 import PopUp from './PopUp';
 import BackgroundSelector from './BackgroundSelector';
 import backgroundOptions from '../data/backgroundOptions';
-import { AppInfo, SimulationState } from '../types';
+import { AppInfo, SimulationState, AppStatus } from '../types';
 
 interface AttackSimulationProps {
   initialApps: AppInfo[];
@@ -57,9 +58,11 @@ const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
       if (app) {
         // Determine if the app is hacked or safe based on password manager status
         const isHacked = !state.passwordManagerActive && !app.hasShield;
-        const updatedApp = {
+        const newStatus: AppStatus = isHacked ? 'hacked' : 'safe';
+        
+        const updatedApp: AppInfo = {
           ...app,
-          status: isHacked ? 'hacked' : 'safe',
+          status: newStatus,
         };
 
         // Update the app in the apps array
@@ -102,7 +105,11 @@ const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
   };
 
   const resetSimulation = () => {
-    const resetApps = initialApps.map(app => ({ ...app, status: 'normal' }));
+    // Ensure we explicitly type the status as 'normal'
+    const resetApps = initialApps.map(app => ({ 
+      ...app, 
+      status: 'normal' as AppStatus 
+    }));
     setApps(resetApps);
     setState({
       phase: 'initial',
