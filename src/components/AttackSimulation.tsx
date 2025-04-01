@@ -1,195 +1,288 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AppInfo, SimulationState } from '../types';
 import PhoneScreen from './PhoneScreen';
 import PopUp from './PopUp';
-import BackgroundSelector from './BackgroundSelector';
-import backgroundOptions from '../data/backgroundOptions';
-import { AppInfo, SimulationState, AppStatus } from '../types';
 
 interface AttackSimulationProps {
   initialApps: AppInfo[];
 }
 
 const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
-  // Filter out the passwordSafe app from initialApps if it exists
-  const filteredInitialApps = initialApps.filter(app => app.id !== 'passwordSafe');
-  
-  const [apps, setApps] = useState<AppInfo[]>(filteredInitialApps);
-  const [state, setState] = useState<SimulationState>({
+  const [apps, setApps] = useState<AppInfo[]>(initialApps);
+  const [simulation, setSimulation] = useState<SimulationState>({
     phase: 'initial',
     currentAppIndex: -1,
     passwordManagerActive: false,
     showPopUp: false,
     popUpContent: null,
-    selectedBackgroundId: 'default',
   });
-  
-  // Toggle for realistic phone design
-  const [useRealisticPhone, setUseRealisticPhone] = useState(true);
+  const [statusMessage, setStatusMessage] = useState<string>("");
 
-  // Handler for selecting a background
-  const handleSelectBackground = (backgroundId: string) => {
-    setState(prev => ({
-      ...prev,
-      selectedBackgroundId: backgroundId
-    }));
+  // Helper function to play sound (simulated for now)
+  const playSound = (type: 'alert' | 'shield') => {
+    console.log(`Playing ${type} sound`);
+    // In a real implementation, we would play an actual sound here
   };
 
-  // Get the current background URL
-  const getCurrentBackgroundUrl = () => {
-    const selected = backgroundOptions.find(bg => bg.id === state.selectedBackgroundId);
-    return selected?.url || '';
-  };
-
-  const startAttack = () => {
-    setState(prev => ({ ...prev, phase: 'attacking', currentAppIndex: 0 }));
-  };
-
-  const advanceAttack = () => {
-    if (state.currentAppIndex < apps.length - 1) {
-      setState(prev => ({ ...prev, currentAppIndex: prev.currentAppIndex + 1 }));
-    } else {
-      setState(prev => ({ ...prev, phase: 'attacked' }));
-    }
-  };
-
-  const handleAnimationComplete = () => {
-    if (state.phase === 'attacking') {
-      const appIndex = state.currentAppIndex;
-      const app = apps[appIndex];
-
-      if (app) {
-        // Determine if the app is hacked or safe based on password manager status
-        const isHacked = !state.passwordManagerActive && !app.hasShield;
-        const newStatus: AppStatus = isHacked ? 'hacked' : 'safe';
-        
-        const updatedApp: AppInfo = {
-          ...app,
-          status: newStatus,
-        };
-
-        // Update the app in the apps array
-        const updatedApps = [...apps];
-        updatedApps[appIndex] = updatedApp;
-        setApps(updatedApps);
-
-        // Show the pop-up message
-        const message = isHacked ? app.hackedMessage : app.safeMessage;
-        setState(prev => ({
-          ...prev,
-          phase: 'attacked',
-          showPopUp: true,
-          popUpContent: {
-            title: isHacked ? 'Hacked' : 'Safe',
-            message: message,
-            buttonText: 'Continue',
-            onClose: () => {
-              if (state.currentAppIndex < apps.length - 1) {
-                setState(prev => ({
-                  ...prev,
-                  showPopUp: false,
-                  popUpContent: null,
-                  phase: 'attacking',
-                  currentAppIndex: prev.currentAppIndex + 1,
-                }));
-              } else {
-                setState(prev => ({
-                  ...prev,
-                  showPopUp: false,
-                  popUpContent: null,
-                  phase: 'attacked',
-                }));
-              }
-            },
-          },
-        }));
-      }
-    }
-  };
-
-  const resetSimulation = () => {
-    // Ensure we explicitly type the status as 'normal'
-    const resetApps = filteredInitialApps.map(app => ({ 
-      ...app, 
-      status: 'normal' as AppStatus 
-    }));
-    setApps(resetApps);
-    setState({
+  // Reset the simulation to initial state
+  const resetSimulation = useCallback(() => {
+    setApps(initialApps);
+    setSimulation({
       phase: 'initial',
       currentAppIndex: -1,
       passwordManagerActive: false,
       showPopUp: false,
       popUpContent: null,
-      selectedBackgroundId: 'default',
     });
-  };
+    setStatusMessage("");
+  }, [initialApps]);
 
-  const togglePasswordManager = () => {
-    setState(prev => ({ ...prev, passwordManagerActive: !prev.passwordManagerActive }));
-  };
+  // Handle the credential stuffing attack
+  const handleAttack = useCallback(() => {
+    if (
+      simulation.phase !== 'initial' && 
+      simulation.phase !== 'safeMode' && 
+      simulation.phase !== 'safeAttacked'
+    ) return;
 
-  return (
-    <div className="relative flex flex-col items-center justify-center pt-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">
-        Your Phone, 2025
-      </h1>
+    const phase = simulation.passwordManagerActive ? 'safeAttacking' : 'attacking';
+    
+    setSimulation(prev => ({
+      ...prev,
+      phase,
+      currentAppIndex: -1,
+      showPopUp: true,
+      popUpContent: {
+        message: "You reused 'DormLife123' on all your apps. Hackers got it from the 2024 NPD breach…",
+        buttonText: "Continue",
+        onClose: () => {
+          setSimulation(prevSim => ({
+            ...prevSim,
+            showPopUp: false,
+            currentAppIndex: 0,
+          }));
+        }
+      }
+    }));
+  }, [simulation.passwordManagerActive, simulation.phase]);
+
+  // Handle activating the password manager
+  const handleActivatePasswordManager = useCallback(() => {
+    if (simulation.phase !== 'attacked') return;
+
+    // First, show that the password manager is being activated
+    setSimulation(prev => ({
+      ...prev,
+      phase: 'safeModeIntro',
+      passwordManagerActive: true,
+      showPopUp: true,
+      popUpContent: {
+        title: "Password Safe Activated!",
+        message: (
+          <div className="space-y-3">
+            <p className="text-blue-400 font-medium">Unique passwords generated for each app:</p>
+            <div className="bg-gray-800 p-3 rounded text-xs font-mono overflow-x-auto">
+              <p>OnlyFans: x7K#9p$2m!</p>
+              <p>Venmo: qW3@rT5^uY</p>
+              <p>Drive: 8jL&vN2#kP</p>
+              <p>iMessage: mP9$xZ4@wQ</p>
+              <p>Ring: zX5#kL9@vR</p>
+              <p>AirDroid: pQ2$wM7#jN</p>
+              <p>Tesla: tY8#hR4@kF</p>
+            </div>
+            <p className="text-sm italic mt-2">No more reused passwords—hackers can't get in.</p>
+          </div>
+        ),
+        buttonText: "Continue",
+        onClose: () => {
+          // Apply shields to all apps
+          setApps(prevApps => 
+            prevApps.map(app => 
+              app.id !== 'passwordSafe' 
+                ? { ...app, hasShield: true, status: 'normal' } 
+                : app
+            )
+          );
+          
+          // Update the password manager icon to show it's active
+          setApps(prevApps => 
+            prevApps.map(app => 
+              app.id === 'passwordSafe' 
+                ? { ...app, bgColor: '#C0C0C0', textColor: '#00FF00' } 
+                : app
+            )
+          );
+          
+          setStatusMessage("Password Safe activated! Unique passwords generated for each app.");
+          setSimulation(prevSim => ({
+            ...prevSim,
+            phase: 'safeMode',
+            showPopUp: false,
+          }));
+        }
+      }
+    }));
+  }, [simulation.phase]);
+
+  // Handle the next app in the attack sequence
+  useEffect(() => {
+    if (
+      (simulation.phase === 'attacking' || simulation.phase === 'safeAttacking') && 
+      simulation.currentAppIndex >= 0 && 
+      simulation.currentAppIndex < 7
+    ) {
+      const regularApps = apps.filter(app => app.id !== 'passwordSafe');
+      const currentApp = regularApps[simulation.currentAppIndex];
       
-      <div className="flex space-x-4 mb-4">
-        <button 
-          onClick={() => setUseRealisticPhone(!useRealisticPhone)}
-          className="bg-black/70 text-white border border-white/20 rounded-md py-1 px-2 text-sm"
-        >
-          {useRealisticPhone ? 'Simple Phone' : 'Realistic Phone'}
-        </button>
-
-        <BackgroundSelector 
-          options={backgroundOptions}
-          selectedBackground={state.selectedBackgroundId || 'default'}
-          onSelectBackground={handleSelectBackground}
-        />
-      </div>
+      if (!currentApp) return;
       
-      <div className="relative">
-        <PhoneScreen 
-          apps={apps}
-          passwordManagerActive={state.passwordManagerActive}
-          animatingAppIndex={state.phase.includes('attacking') ? state.currentAppIndex : null}
-          onAnimationComplete={() => handleAnimationComplete()}
-          backgroundImage={getCurrentBackgroundUrl()}
-          useRealisticPhone={useRealisticPhone}
-        />
+      // Play sound effect
+      playSound(simulation.phase === 'attacking' ? 'alert' : 'shield');
+      
+      // Update app status based on whether password manager is active
+      const newStatus = simulation.phase === 'attacking' ? 'hacked' : 'safe';
+      
+      setTimeout(() => {
+        // Update the app status
+        setApps(prevApps => 
+          prevApps.map(app => 
+            app.id === currentApp.id 
+              ? { ...app, status: newStatus } 
+              : app
+          )
+        );
         
-        {state.phase === 'initial' && (
-          <button className="btn-attack mt-6" onClick={startAttack}>
-            Start Attack
-          </button>
-        )}
+        // Show status message for the current app
+        setStatusMessage(
+          simulation.phase === 'attacking' 
+            ? currentApp.hackedMessage 
+            : currentApp.safeMessage
+        );
+        
+      }, 500); // Delay to allow animation to complete
+    }
+  }, [simulation.phase, simulation.currentAppIndex, apps]);
 
-        {state.phase === 'attacked' && (
-          <div className="flex space-x-4 mt-6">
-            <button className="btn-safe" onClick={togglePasswordManager}>
-              {state.passwordManagerActive ? 'Disable Password Manager' : 'Enable Password Manager'}
+  // Handle animation complete
+  const handleAnimationComplete = useCallback(() => {
+    if (
+      (simulation.phase === 'attacking' || simulation.phase === 'safeAttacking') && 
+      simulation.currentAppIndex >= 0
+    ) {
+      const regularApps = apps.filter(app => app.id !== 'passwordSafe');
+      
+      if (simulation.currentAppIndex < regularApps.length - 1) {
+        // Move to next app
+        setTimeout(() => {
+          setSimulation(prev => ({
+            ...prev,
+            currentAppIndex: prev.currentAppIndex + 1,
+          }));
+        }, 1000); // Delay between apps
+      } else {
+        // All apps processed, update phase
+        setTimeout(() => {
+          const newPhase = simulation.phase === 'attacking' ? 'attacked' : 'safeAttacked';
+          
+          setSimulation(prev => ({
+            ...prev,
+            phase: newPhase,
+            currentAppIndex: -1,
+          }));
+          
+          // Show final summary message
+          if (newPhase === 'attacked') {
+            setStatusMessage("One reused password, and your cash, grades, rep, home, privacy, and car are gone.");
+          } else {
+            setStatusMessage("Password Safe stopped the hack—unique passwords saved you!");
+          }
+        }, 1000);
+      }
+    }
+  }, [simulation.phase, simulation.currentAppIndex, apps]);
+
+  // Get action buttons based on current phase
+  const getActionButtons = () => {
+    switch (simulation.phase) {
+      case 'initial':
+        return (
+          <button className="btn-attack" onClick={handleAttack}>
+            Credential Stuffing Attack
+          </button>
+        );
+      case 'attacked':
+        return (
+          <div className="flex flex-wrap gap-4">
+            <button className="btn-safe" onClick={handleActivatePasswordManager}>
+              Use Password Safe
             </button>
             <button className="btn-reset" onClick={resetSimulation}>
               Reset
             </button>
           </div>
-        )}
-
-        {state.phase === 'attacked' && state.passwordManagerActive && (
-          <div className="mt-4 text-green-500 font-bold animate-pulse">
-            Password Manager Active!
+        );
+      case 'safeMode':
+        return (
+          <div className="flex flex-wrap gap-4">
+            <button className="btn-attack" onClick={handleAttack}>
+              Credential Stuffing Attack
+            </button>
+            <button className="btn-reset" onClick={resetSimulation}>
+              Reset
+            </button>
           </div>
-        )}
+        );
+      case 'safeAttacked':
+        return (
+          <button className="btn-reset" onClick={resetSimulation}>
+            Reset
+          </button>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 text-white text-center">
+        Your Phone, 2025
+      </h1>
+
+      <PhoneScreen
+        apps={apps}
+        passwordManagerActive={simulation.passwordManagerActive}
+        animatingAppIndex={simulation.phase === 'attacking' || simulation.phase === 'safeAttacking' ? simulation.currentAppIndex : null}
+        onAnimationComplete={handleAnimationComplete}
+      />
+
+      {/* Status Message */}
+      {statusMessage && (
+        <div className={`mt-6 mb-6 text-center max-w-md ${
+          simulation.phase === 'attacked' 
+            ? 'text-red-400'
+            : simulation.phase === 'safeAttacked' || simulation.phase === 'safeMode' 
+            ? 'text-blue-400'
+            : 'text-white'
+        }`}>
+          <p className="text-lg">{statusMessage}</p>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="mt-2 flex flex-wrap justify-center gap-4">
+        {getActionButtons()}
       </div>
-      
-      {state.showPopUp && state.popUpContent && (
+
+      {/* Pop-up Dialog */}
+      {simulation.showPopUp && simulation.popUpContent && (
         <PopUp
-          title={state.popUpContent.title}
-          message={state.popUpContent.message}
-          buttonText={state.popUpContent.buttonText}
-          isOpen={state.showPopUp}
-          onClose={state.popUpContent.onClose}
+          title={simulation.popUpContent.title}
+          message={simulation.popUpContent.message}
+          buttonText={simulation.popUpContent.buttonText}
+          isOpen={simulation.showPopUp}
+          onClose={simulation.popUpContent.onClose}
         />
       )}
     </div>
