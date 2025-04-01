@@ -3,7 +3,7 @@ import React from 'react';
 import AppIcon from './AppIcon';
 import PhoneFrame from './PhoneFrame';
 import { AppInfo } from '../types';
-import { Wifi, Battery } from 'lucide-react';
+import { Wifi, Battery, Signal } from 'lucide-react';
 
 interface PhoneScreenProps {
   apps: AppInfo[];
@@ -29,9 +29,8 @@ const PhoneScreen: React.FC<PhoneScreenProps> = ({
     hour12: true
   });
 
-  // Find the password safe app
-  const passwordSafe = apps.find(app => app.id === 'passwordSafe');
-  const regularApps = apps.filter(app => app.id !== 'passwordSafe');
+  // Filter out the password safe app
+  const displayApps = apps.filter(app => app.id !== 'passwordSafe');
 
   // Default background gradient if no image is provided
   const defaultBackground = 'linear-gradient(to bottom, rgba(26, 26, 26, 0.9), rgba(26, 26, 26, 0.95))';
@@ -39,7 +38,7 @@ const PhoneScreen: React.FC<PhoneScreenProps> = ({
   // Background style with image if provided
   const backgroundStyle = backgroundImage 
     ? {
-        backgroundImage: `linear-gradient(to bottom, rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.8)), url(${backgroundImage})`,
+        backgroundImage: `linear-gradient(to bottom, rgba(26, 26, 26, 0.4), rgba(26, 26, 26, 0.6)), url(${backgroundImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }
@@ -48,21 +47,22 @@ const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const phoneContent = (
     <>
       {/* Status Bar */}
-      <div className="status-bar">
+      <div className="status-bar flex justify-between items-center px-5 py-1 bg-black/30 backdrop-blur-sm z-10">
         <div className="text-xs font-medium text-white">{timeString}</div>
         <div className="flex items-center gap-2">
-          <Wifi size={14} className="text-white" />
+          <Signal size={12} className="text-white" />
+          <Wifi size={12} className="text-white" />
           <div className="flex items-center">
             <Battery size={14} className="text-green-500" />
-            <span className="text-xs text-white ml-1">80%</span>
+            <span className="text-xs text-white ml-1">86%</span>
           </div>
         </div>
       </div>
 
       {/* App Grid */}
-      <div className="p-5 min-h-[500px]" style={backgroundStyle}>
-        <div className="grid grid-cols-3 gap-2">
-          {regularApps.map((app, index) => (
+      <div className="p-5 min-h-[500px] flex flex-col" style={backgroundStyle}>
+        <div className="grid grid-cols-4 gap-4 mt-8">
+          {displayApps.map((app, index) => (
             <AppIcon
               key={app.id}
               app={app}
@@ -72,16 +72,77 @@ const PhoneScreen: React.FC<PhoneScreenProps> = ({
           ))}
         </div>
 
-        {/* Password Safe at bottom right */}
-        {passwordSafe && (
-          <div className="absolute bottom-5 right-5">
-            <AppIcon
-              app={passwordSafe}
-              animating={false}
-              onAnimationComplete={() => {}}
-            />
+        {/* Dock at the bottom */}
+        <div className="mt-auto mb-4">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-2 mx-auto w-[90%]">
+            <div className="flex justify-around">
+              <AppIcon
+                app={{
+                  id: "phone",
+                  name: "Phone",
+                  icon: "📞",
+                  bgColor: "#34C759",
+                  textColor: "#FFFFFF",
+                  status: "normal",
+                  hasShield: false,
+                  hackedMessage: "",
+                  safeMessage: ""
+                }}
+                animating={false}
+                onAnimationComplete={() => {}}
+                isDockIcon={true}
+              />
+              <AppIcon
+                app={{
+                  id: "messages",
+                  name: "Messages",
+                  icon: "💬",
+                  bgColor: "#5AC8FA",
+                  textColor: "#FFFFFF",
+                  status: "normal",
+                  hasShield: false,
+                  hackedMessage: "",
+                  safeMessage: ""
+                }}
+                animating={false}
+                onAnimationComplete={() => {}}
+                isDockIcon={true}
+              />
+              <AppIcon
+                app={{
+                  id: "safari",
+                  name: "Safari",
+                  icon: "🌐",
+                  bgColor: "#007AFF",
+                  textColor: "#FFFFFF",
+                  status: "normal",
+                  hasShield: false,
+                  hackedMessage: "",
+                  safeMessage: ""
+                }}
+                animating={false}
+                onAnimationComplete={() => {}}
+                isDockIcon={true}
+              />
+              <AppIcon
+                app={{
+                  id: "music",
+                  name: "Music",
+                  icon: "🎵",
+                  bgColor: "#FF2D55",
+                  textColor: "#FFFFFF",
+                  status: "normal",
+                  hasShield: false,
+                  hackedMessage: "",
+                  safeMessage: ""
+                }}
+                animating={false}
+                onAnimationComplete={() => {}}
+                isDockIcon={true}
+              />
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </>
   );

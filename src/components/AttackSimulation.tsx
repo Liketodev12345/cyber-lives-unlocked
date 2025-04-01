@@ -11,7 +11,10 @@ interface AttackSimulationProps {
 }
 
 const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
-  const [apps, setApps] = useState<AppInfo[]>(initialApps);
+  // Filter out the passwordSafe app from initialApps if it exists
+  const filteredInitialApps = initialApps.filter(app => app.id !== 'passwordSafe');
+  
+  const [apps, setApps] = useState<AppInfo[]>(filteredInitialApps);
   const [state, setState] = useState<SimulationState>({
     phase: 'initial',
     currentAppIndex: -1,
@@ -22,7 +25,7 @@ const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
   });
   
   // Toggle for realistic phone design
-  const [useRealisticPhone, setUseRealisticPhone] = useState(false);
+  const [useRealisticPhone, setUseRealisticPhone] = useState(true);
 
   // Handler for selecting a background
   const handleSelectBackground = (backgroundId: string) => {
@@ -43,7 +46,7 @@ const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
   };
 
   const advanceAttack = () => {
-    if (state.currentAppIndex < apps.length - 2) {
+    if (state.currentAppIndex < apps.length - 1) {
       setState(prev => ({ ...prev, currentAppIndex: prev.currentAppIndex + 1 }));
     } else {
       setState(prev => ({ ...prev, phase: 'attacked' }));
@@ -81,7 +84,7 @@ const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
             message: message,
             buttonText: 'Continue',
             onClose: () => {
-              if (state.currentAppIndex < apps.length - 2) {
+              if (state.currentAppIndex < apps.length - 1) {
                 setState(prev => ({
                   ...prev,
                   showPopUp: false,
@@ -106,7 +109,7 @@ const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
 
   const resetSimulation = () => {
     // Ensure we explicitly type the status as 'normal'
-    const resetApps = initialApps.map(app => ({ 
+    const resetApps = filteredInitialApps.map(app => ({ 
       ...app, 
       status: 'normal' as AppStatus 
     }));
@@ -132,18 +135,18 @@ const AttackSimulation: React.FC<AttackSimulationProps> = ({ initialApps }) => {
       </h1>
       
       <div className="flex space-x-4 mb-4">
-        <BackgroundSelector 
-          options={backgroundOptions}
-          selectedBackground={state.selectedBackgroundId || 'default'}
-          onSelectBackground={handleSelectBackground}
-        />
-        
         <button 
           onClick={() => setUseRealisticPhone(!useRealisticPhone)}
           className="bg-black/70 text-white border border-white/20 rounded-md py-1 px-2 text-sm"
         >
           {useRealisticPhone ? 'Simple Phone' : 'Realistic Phone'}
         </button>
+
+        <BackgroundSelector 
+          options={backgroundOptions}
+          selectedBackground={state.selectedBackgroundId || 'default'}
+          onSelectBackground={handleSelectBackground}
+        />
       </div>
       
       <div className="relative">
