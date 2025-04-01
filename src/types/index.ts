@@ -1,6 +1,4 @@
 
-import React from 'react';
-
 export type AppInfo = {
   id: string;
   name: string;
@@ -27,12 +25,4 @@ export type SimulationState = {
     buttonText: string;
     onClose: () => void;
   } | null;
-  selectedBackgroundId?: string;
-};
-
-export type BackgroundOption = {
-  id: string;
-  name: string;
-  url: string;
-  thumbnail?: string;
 };
