@@ -20,7 +20,7 @@ const AppIcon: React.FC<AppIconProps> = ({ app, animating, onAnimationComplete }
   };
 
   const getIconClass = () => {
-    const baseClass = 'app-icon w-16 h-16 sm:w-20 sm:h-20';
+    const baseClass = 'app-icon w-14 h-14 sm:w-16 sm:h-16';
     if (animating && !animationComplete) {
       return `${baseClass} animate-shake`;
     }
@@ -48,7 +48,7 @@ const AppIcon: React.FC<AppIconProps> = ({ app, animating, onAnimationComplete }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center m-2">
+    <div className="flex flex-col items-center justify-center m-1">
       <div className="relative">
         <div 
           className={getIconClass()} 
@@ -68,8 +68,8 @@ const AppIcon: React.FC<AppIconProps> = ({ app, animating, onAnimationComplete }
         </div>
       </div>
       <div className="app-label">
-        <div>{app.name}</div>
-        {app.subtitle && <div className="text-xs opacity-75">{app.subtitle}</div>}
+        <div className="text-xs">{app.name}</div>
+        {app.subtitle && <div className="text-[10px] opacity-75">{app.subtitle}</div>}
       </div>
     </div>
   );
